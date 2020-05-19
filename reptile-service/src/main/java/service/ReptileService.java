@@ -1,5 +1,6 @@
 package service;
 
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import core.framework.http.ContentType;
 import core.framework.http.HTTPClient;
@@ -104,6 +105,7 @@ public class ReptileService {
             Query query = new Query();
             query.limit = 50;
             query.skip = skip;
+            query.filter = Filters.eq("status", null);
             query.sort = Sorts.ascending("_id");
             List<Restaurant> restaurants = restaurantCollection.find(query);
             for (Restaurant restaurant : restaurants) {
@@ -142,6 +144,7 @@ public class ReptileService {
                     }
                     if (element.classNames().contains("u-space-b3")) {
                         Elements childrenElements = element.children();
+                        if (category == null) category = new Restaurant.Category();
                         category.menuItems = childrenElements.stream().map(childrenElement -> {
                             Restaurant.MenuItem menuItem = new Restaurant.MenuItem();
                             menuItem.name = childrenElement.selectFirst("h4").text();
