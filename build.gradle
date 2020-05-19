@@ -1,0 +1,89 @@
+apply from: file("${rootDir}/gradle/project.gradle")
+
+subprojects {
+    group = "com.foodtruck"
+    version = '1.0.0'
+
+    repositories {
+        maven {
+            url 'https://neowu.github.io/maven-repo/'
+            content {
+                includeGroup 'core.framework'
+            }
+        }
+    }
+}
+
+def coreNGVersion = '7.4.1.1'
+def mysqlVersion = '8.0.19'
+def hsqlVersion = '2.5.0'
+def seleniumVersion = '3.141.59'
+
+configure(subprojects.findAll { it.name.endsWith('-db-migration') }) {
+    apply from: file("${rootDir}/gradle/db-migration.gradle")
+
+    dependencies {
+        runtimeOnly "mysql:mysql-connector-java:${mysqlVersion}"
+    }
+}
+
+configure(subprojects.findAll { it.name.endsWith('-interface') || it.name.matches(/(-|\w)+-interface-v\d+$/) }) {
+    apply from: file("${rootDir}/gradle/lib.gradle")
+    dependencies {
+        implementation "core.framework:core-ng-api:${coreNGVersion}"
+    }
+}
+
+configure(subprojects.findAll { it.name.endsWith('-es-migration') }) {
+    apply from: file("${rootDir}/gradle/app.gradle")
+    dependencies {
+        implementation "core.framework:core-ng:${coreNGVersion}"
+        implementation "core.framework:core-ng-search:${coreNGVersion}"
+    }
+    tasks.register('esMigrate') {
+        dependsOn run
+    }
+}
+
+configure(subprojects.findAll { it.name.endsWith('-mongo-migration') }) {
+    apply from: file("${rootDir}/gradle/app.gradle")
+    dependencies {
+        implementation "core.framework:core-ng:${coreNGVersion}"
+        implementation "core.framework:core-ng-mongo:${coreNGVersion}"
+    }
+    tasks.register('mongoMigrate') {
+        dependsOn run
+    }
+}
+
+configure(subprojects.findAll { it.name.endsWith('-library') }) {
+    dependencies {
+        implementation "core.framework:core-ng:${coreNGVersion}"
+        testImplementation "core.framework:core-ng-test:${coreNGVersion}"
+    }
+}
+
+configure(subprojects.findAll {
+    it.name.endsWith('-service') || it.name.matches(/(-|\w)+-service-v\d+$/) || it.name.endsWith('-api') || it.name.endsWith('-site')
+}) {
+    apply from: file("${rootDir}/gradle/app.gradle")
+    dependencies {
+        implementation "core.framework:core-ng:${coreNGVersion}"
+        testImplementation "core.framework:core-ng-test:${coreNGVersion}"
+    }
+}
+
+// services use mongodb
+configure([project(':reptile-service')]) {
+    dependencies {
+        implementation "core.framework:core-ng-mongo:${coreNGVersion}"
+        implementation 'org.jsoup:jsoup:1.12.1'
+        testImplementation "core.framework:core-ng-mongo-test:${coreNGVersion}"
+    }
+}
+
+configure(subprojects.findAll { it.name.endsWith('service-interface') || it.name.matches(/(-|\w)+-interface-v\d+$/) || it.name.endsWith('site-interface') || it.name.endsWith('api-interface') }) {
+    dependencies {
+        api project(':backend:common-interface')
+    }
+}

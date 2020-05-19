@@ -1,0 +1,46 @@
+// use gradlew -Penv=${env} to pass
+def env = hasProperty('env') ? env : null
+
+apply plugin: 'application'
+mainClassName = 'Main'
+
+tasks.named("processResources").configure {
+    if (env != null) {
+        assert project.file("conf/${env}/resources").exists()
+        inputs.dir project.file("conf/${env}/resources")
+        from "conf/${env}/resources"
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
+}
+
+tasks.named("distTar").configure {
+    archiveFileName = "${archiveBaseName.get()}.${archiveExtension.get()}"
+}
+
+tasks.named("distZip").configure {
+    enabled = false
+}
+
+tasks.named("startScripts").configure {
+    defaultJvmOpts = ['-Dcore.webPath=APP_HOME_VAR/web', "-Dcore.appName=${project.name}"]
+
+    doLast {
+        windowsScript.text = windowsScript.text.replaceFirst('APP_HOME_VAR', '%APP_HOME%')
+        unixScript.text = unixScript.text.replaceFirst('APP_HOME_VAR', '\\$APP_HOME')
+    }
+}
+
+tasks.named("run").configure {
+    // assign all system properties to application, e.g. ./gradlew -Dkey=value :some-service:run
+    System.properties.each { key, value ->
+        if (key != "user.dir" && key != "java.endorsed.dirs") {
+            systemProperty key as String, value
+        }
+    }
+}
+
+tasks.named('mkdir') {
+    doLast {
+        mkdir("${projectDir}/conf/dev/resources")
+    }
+}

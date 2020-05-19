@@ -1,0 +1,76 @@
+import java.time.Instant
+
+defaultTasks 'clean', 'build'
+
+subprojects {
+    if (!childProjects.isEmpty()) return    // ignore parent project
+
+    apply plugin: 'java'
+
+    sourceCompatibility = JavaVersion.VERSION_14
+    targetCompatibility = JavaVersion.VERSION_14
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+        options.deprecation = true
+        options.compilerArgs += ['-Xlint:all', '-proc:none']
+    }
+
+    repositories {
+        mavenCentral()
+        mavenLocal()
+    }
+
+    buildDir = "${rootDir}/build/${rootDir.relativePath(projectDir)}"
+
+    tasks.named('test') {
+        useJUnitPlatform()
+        failFast = true
+        testLogging.showStandardStreams = true
+        testLogging.exceptionFormat 'full'
+    }
+
+    tasks.named('jar') {
+        // put parent name in final jar name, to resolve collision of child projects with same name under different parents
+        if (parent.depth > 0) {
+            archiveBaseName = "${parent.name}-${archiveBaseName.get()}"
+        }
+    }
+
+    tasks.register('mkdir') {
+        group = 'build setup'
+        description = 'Create project directories.'
+        doLast {
+            sourceSets*.java.srcDirs*.each { it.mkdirs() }
+            sourceSets*.resources.srcDirs*.each { it.mkdirs() }
+        }
+    }
+
+    afterEvaluate {
+        // update group on afterEvaluate since the project.gradle usually included in the first line of project build.gradle, which project.group is not assigned yet
+        if (parent.depth > 0) {
+            group = "${group}.${parent.name}"    // append parent into group, let child projects with same name under different parent have different artifactId
+        }
+
+        tasks.withType(Jar).configureEach {
+            manifest {
+                attributes 'Implementation-Title': project.name,
+                    'Implementation-Version': project.version,
+                    'Created-By': "${System.getProperty('java.version')} (${System.getProperty('java.vendor')})",
+                    'Built-With': "gradle ${project.gradle.gradleVersion}",
+                    'Build-Time': Instant.now().toString()
+            }
+        }
+    }
+}
+
+apply from: file("${rootDir}/gradle/check.gradle")
+
+allprojects {
+    apply plugin: 'idea'
+    idea.module.inheritOutputDirs = true
+}
+
+tasks.named('wrapper') {
+    gradleVersion = '6.4'
+}
