@@ -119,6 +119,7 @@ public class ReptileService {
                 HTTPResponse response = httpClient.execute(request);
                 if (response.statusCode != 200) {
                     logger.error("access failed,url #{}", url);
+                    continue;
                 }
 
                 Document document = Jsoup.parse(new String(response.body, StandardCharsets.UTF_8));
