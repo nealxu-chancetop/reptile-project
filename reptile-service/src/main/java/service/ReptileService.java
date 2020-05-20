@@ -113,19 +113,20 @@ public class ReptileService {
             query.sort = Sorts.ascending("_id");
             List<Restaurant> restaurants = restaurantCollection.find(query);
             for (Restaurant restaurant : restaurants) {
+                Threads.sleepRoughly(Duration.ofSeconds(5)); //sleep
                 String url = String.format("https://www.yelp.com/menu/%s", restaurant.alias);
                 var request = new HTTPRequest(HTTPMethod.GET, url);
                 HTTPResponse response = httpClient.execute(request);
                 if (response.statusCode != 200) {
                     logger.error("access failed,url #{}", url);
                 }
+
                 Document document = Jsoup.parse(new String(response.body, StandardCharsets.UTF_8));
                 Element menuElement = document.selectFirst("div[class=menu-sections]");
                 if (menuElement == null) {
                     restaurant.status = "NOT_MENU";
                     logger.info("restaurant #{} not menu", restaurant.alias);
                     restaurantCollection.replace(restaurant);
-                    Threads.sleepRoughly(Duration.ofSeconds(5));
                     continue;
                 }
                 Elements elements = menuElement.children();
@@ -170,7 +171,6 @@ public class ReptileService {
                 restaurant.status = "OK";
                 logger.info("restaurant #{} sync menu", restaurant.alias);
                 restaurantCollection.replace(restaurant);
-                Threads.sleepRoughly(Duration.ofSeconds(5));
             }
             if (restaurants.size() != 50) break;
         }
