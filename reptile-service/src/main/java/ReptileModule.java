@@ -11,7 +11,7 @@ import java.time.Duration;
 public class ReptileModule extends Module {
     @Override
     protected void initialize() {
-        HTTPClient client = new HTTPClientBuilder().timeout(Duration.ofSeconds(30)).maxRetries(3).build();
+        HTTPClient client = new HTTPClientBuilder().timeout(Duration.ofSeconds(30)).build();
         ReptileService reptileService = new ReptileService(client);
         bind(reptileService);
 

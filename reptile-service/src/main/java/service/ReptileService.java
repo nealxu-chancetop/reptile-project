@@ -13,14 +13,18 @@ import core.framework.mongo.MongoCollection;
 import core.framework.mongo.Query;
 import core.framework.util.Lists;
 import core.framework.util.Maps;
+import core.framework.util.Threads;
 import domain.Restaurant;
 import domain.SearchBusinessResponse;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +34,7 @@ import java.util.stream.Collectors;
  * @author Neal
  */
 public class ReptileService {
+    private final Logger logger = LoggerFactory.getLogger(ReptileService.class);
     private final HTTPClient httpClient;
     @Inject
     MongoCollection<Restaurant> restaurantCollection;
@@ -100,11 +105,10 @@ public class ReptileService {
     }
 
     public void fetchMenu() {
-        int skip = 0;
         while (true) {
             Query query = new Query();
             query.limit = 50;
-            query.skip = skip;
+            query.skip = 0;
             query.filter = Filters.eq("status", null);
             query.sort = Sorts.ascending("_id");
             List<Restaurant> restaurants = restaurantCollection.find(query);
@@ -112,12 +116,15 @@ public class ReptileService {
                 String url = String.format("https://www.yelp.com/menu/%s", restaurant.alias);
                 var request = new HTTPRequest(HTTPMethod.GET, url);
                 HTTPResponse response = httpClient.execute(request);
+                if (response.statusCode != 200) {
+                    logger.error("access failed,url #{}", url);
+                }
                 Document document = Jsoup.parse(new String(response.body, StandardCharsets.UTF_8));
-
-
                 Element menuElement = document.selectFirst("div[class=menu-sections]");
                 if (menuElement == null) {
                     restaurant.status = "NOT_MENU";
+                    logger.info("restaurant #{} not menu", restaurant.alias);
+                    restaurantCollection.replace(restaurant);
                     continue;
                 }
                 Elements elements = menuElement.children();
@@ -160,9 +167,10 @@ public class ReptileService {
                 menu.categories = categories;
                 restaurant.menu = menu;
                 restaurant.status = "OK";
+                logger.info("restaurant #{} sync menu", restaurant.alias);
+                restaurantCollection.replace(restaurant);
+                Threads.sleepRoughly(Duration.ofSeconds(5));
             }
-            restaurantCollection.bulkReplace(restaurants);
-            skip += 50;
             if (restaurants.size() != 50) break;
         }
     }
