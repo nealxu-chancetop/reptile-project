@@ -125,6 +125,7 @@ public class ReptileService {
                     restaurant.status = "NOT_MENU";
                     logger.info("restaurant #{} not menu", restaurant.alias);
                     restaurantCollection.replace(restaurant);
+                    Threads.sleepRoughly(Duration.ofSeconds(5));
                     continue;
                 }
                 Elements elements = menuElement.children();
