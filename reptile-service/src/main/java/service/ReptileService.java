@@ -146,7 +146,8 @@ public class ReptileService {
                     }
                     if (element.classNames().contains("section-header")) {
                         category = new Restaurant.Category();
-                        category.name = element.selectFirst("h2[class=alternate]").text();
+                        Element nameElement = element.selectFirst("h2[class=alternate]");
+                        category.name = nameElement.text();
                         Element descriptionElement = element.selectFirst("p[class=menu-section-description]");
                         if (descriptionElement != null)
                             category.description = descriptionElement.text();
@@ -157,11 +158,15 @@ public class ReptileService {
                         if (category == null) category = new Restaurant.Category();
                         category.menuItems = childrenElements.stream().map(childrenElement -> {
                             Restaurant.MenuItem menuItem = new Restaurant.MenuItem();
-                            menuItem.name = childrenElement.selectFirst("h4").text();
+                            Element h4Element = childrenElement.selectFirst("h4");
+                            if (h4Element != null)
+                                menuItem.name = h4Element.text();
                             Element descriptionElement = childrenElement.selectFirst("p[class=menu-item-details-description]");
                             if (descriptionElement != null)
                                 menuItem.description = descriptionElement.text();
-                            menuItem.price = childrenElement.selectFirst("div[class=menu-item-prices arrange_unit]").text();
+                            Element priceElement = childrenElement.selectFirst("div[class=menu-item-prices arrange_unit]");
+                            if (priceElement != null)
+                                menuItem.price = priceElement.text();
                             return menuItem;
                         }).collect(Collectors.toList());
                         categories.add(category);
