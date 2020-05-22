@@ -46,7 +46,11 @@ public class ReptileService {
     }
 
     public void fetchRestaurant() {
-        List<String> counties = List.of( "Roselle"
+        List<String> counties = List.of("Westfield", "BerkeleyHeights"
+            , "Mountainside", "NewProvidence", "Summit",
+            "Cranford", "Fanwood", "Scotchplains", "Springfield", "Kenilworth", "Clark",
+            "UnionTownship", "Garwood", "Linden", "RosellePark", "Rahway", "Hillside",
+            "Plainfield", "Winfield", "Elizabeth", "Roselle"
         );
         for (String county : counties) {
             logger.info("begin sync {}", county);
