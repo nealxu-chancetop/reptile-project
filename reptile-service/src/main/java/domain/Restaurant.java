@@ -20,15 +20,45 @@ public class Restaurant {
     @Field(name = "name")
     public String name;
 
-    @Field(name = "price")
-    public String price;
+    @Field(name = "image_url")
+    public String imageUrl;
+
+    @Field(name = "is_closed")
+    public Boolean isClosed;
+
+    @Field(name = "url")
+    public String url;
+
+    @Field(name = "review_count")
+    public Integer reviewCount;
+
+    @Field(name = "cusines")
+    public List<Cuisine> cuisines;
 
     @Field(name = "rating")
     public Double rating;
 
+    @Field(name = "coordinates")
+    public Coordinates coordinates;
+
+    @Field(name = "transactions")
+    public List<String> transactions;
+
+    @Field(name = "price")
+    public String price;
+
     @Field(name = "location")
     public Location location;
 
+    @Field(name = "phone")
+    public String phone;
+
+    @Field(name = "display_phone")
+    public String displayPhone;
+
+    @Field(name = "distance")
+    public Double distance;
+    
     @Field(name = "counties")
     public List<String> counties;
 
@@ -59,6 +89,9 @@ public class Restaurant {
 
         @Field(name = "state")
         public String state;
+
+        @Field(name = "display_address")
+        public List<String> displayAddress;
     }
 
     public static class Menu {
@@ -89,5 +122,22 @@ public class Restaurant {
 
         @Field(name = "price")
         public String price;
+    }
+
+
+    public static class Cuisine {
+        @Field(name = "alias")
+        public String alias;
+
+        @Field(name = "title")
+        public String title;
+    }
+
+    public static class Coordinates {
+        @Field(name = "latitude")
+        public String latitude;
+
+        @Field(name = "longitude")
+        public String longitude;
     }
 }

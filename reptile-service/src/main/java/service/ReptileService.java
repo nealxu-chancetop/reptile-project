@@ -12,7 +12,6 @@ import core.framework.json.JSON;
 import core.framework.mongo.MongoCollection;
 import core.framework.mongo.Query;
 import core.framework.util.Lists;
-import core.framework.util.Maps;
 import core.framework.util.Threads;
 import domain.Restaurant;
 import domain.SearchBusinessResponse;
@@ -28,7 +27,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static com.mongodb.client.model.Filters.in;
 
 /**
  * @author Neal
@@ -44,14 +46,10 @@ public class ReptileService {
     }
 
     public void fetchRestaurant() {
-        List<String> counties = List.of("Westfield", "BerkeleyHeights"
-            , "Mountainside", "NewProvidence", "Summit",
-            "Cranford", "Fanwood", "Scotchplains", "Springfield", "Kenilworth", "Clark",
-            "UnionTownship", "Garwood", "Linden", "RosellePark", "Rahway", "Hillside",
-            "Plainfield", "Winfield", "Elizabeth", "Roselle"
+        List<String> counties = List.of( "Roselle"
         );
-        Map<String, Restaurant> restaurantMap = Maps.newHashMap();
         for (String county : counties) {
+            logger.info("begin sync {}", county);
             int offset = 0;
             while (true) {
                 String url = String.format("https://api.yelp.com/v3/businesses/search?term=restaurants&location=%s&limit=50&offset=%d", county, offset);
@@ -60,17 +58,20 @@ public class ReptileService {
                 request.accept(ContentType.APPLICATION_JSON);
                 HTTPResponse response = httpClient.execute(request);
                 SearchBusinessResponse searchBusinessResponse = JSON.fromJSON(SearchBusinessResponse.class, new String(response.body, StandardCharsets.UTF_8));
+                if (searchBusinessResponse.businesses.isEmpty()) break;
+                Map<String, Restaurant> restaurantMap = restaurantCollection.find(in("_id", searchBusinessResponse.businesses.stream().map(restaurant -> restaurant.id).collect(Collectors.toList())))
+                    .stream().collect(Collectors.toMap(restaurant -> restaurant.id, Function.identity()));
                 searchBusinessResponse.businesses.forEach(restaurantView -> {
                     Restaurant restaurant = restaurantMap.get(restaurantView.id);
                     if (restaurant == null) {
-                        Restaurant newRestaurant = buildRestaurant(restaurantView);
-                        newRestaurant.counties.add(county);
-                        restaurantMap.put(restaurantView.id, newRestaurant);
-                    } else {
-                        restaurant.counties.add(county);
-                        restaurant.counties = restaurant.counties.stream().distinct().collect(Collectors.toList());
+                        restaurant = new Restaurant();
                     }
+                    buildRestaurant(restaurant, restaurantView);
+                    restaurant.counties.add(county);
+                    restaurant.counties = restaurant.counties.stream().distinct().collect(Collectors.toList());
+                    restaurantMap.put(restaurant.id, restaurant);
                 });
+                restaurantCollection.bulkReplace(new ArrayList<>(restaurantMap.values()));
                 if (searchBusinessResponse.businesses.size() != 50) {
                     break;
                 } else {
@@ -78,17 +79,38 @@ public class ReptileService {
                 }
                 if (offset >= 1000) break;
             }
+
         }
-        restaurantCollection.bulkReplace(new ArrayList<>(restaurantMap.values()));
     }
 
-    private Restaurant buildRestaurant(SearchBusinessResponse.Restaurant restaurantView) {
-        Restaurant restaurant = new Restaurant();
+    private void buildRestaurant(Restaurant restaurant, SearchBusinessResponse.Restaurant restaurantView) {
         restaurant.id = restaurantView.id;
         restaurant.alias = restaurantView.alias;
         restaurant.name = restaurantView.name;
-        restaurant.price = restaurantView.price;
+        restaurant.imageUrl = restaurantView.imageUrl;
+        restaurant.isClosed = restaurantView.isClosed;
+        restaurant.url = restaurantView.url;
+        restaurant.reviewCount = restaurantView.reviewCount;
+        if (restaurantView.categories != null) {
+            restaurant.cuisines = restaurantView.categories.stream().map(cusine -> {
+                Restaurant.Cuisine cuisineView = new Restaurant.Cuisine();
+                cuisineView.alias = cusine.alias;
+                cuisineView.title = cusine.title;
+                return cuisineView;
+            }).collect(Collectors.toList());
+        }
         restaurant.rating = restaurantView.rating;
+        if (restaurantView.coordinates != null) {
+            Restaurant.Coordinates coordinates = new Restaurant.Coordinates();
+            coordinates.latitude = restaurantView.coordinates.latitude;
+            coordinates.longitude = restaurantView.coordinates.longitude;
+            restaurant.coordinates = coordinates;
+        }
+        restaurant.transactions = restaurantView.transactions;
+        restaurant.price = restaurantView.price;
+        restaurant.phone = restaurantView.phone;
+        restaurant.displayPhone = restaurantView.displayPhone;
+        restaurant.distance = restaurantView.distance;
         if (restaurantView.location != null) {
             Restaurant.Location location = new Restaurant.Location();
             location.address1 = restaurantView.location.address1;
@@ -98,10 +120,10 @@ public class ReptileService {
             location.zipCode = restaurantView.location.zipCode;
             location.country = restaurantView.location.country;
             location.state = restaurantView.location.state;
+            location.displayAddress = restaurantView.location.displayAddress;
             restaurant.location = location;
         }
-        restaurant.counties = Lists.newArrayList();
-        return restaurant;
+        restaurant.counties = restaurant.counties == null ? Lists.newArrayList() : restaurant.counties;
     }
 
     public void fetchMenu() {

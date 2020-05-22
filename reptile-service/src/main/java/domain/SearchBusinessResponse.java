@@ -24,14 +24,44 @@ public class SearchBusinessResponse {
         @Property(name = "name")
         public String name;
 
-        @Property(name = "price")
-        public String price;
+        @Property(name = "image_url")
+        public String imageUrl;
+
+        @Property(name = "is_closed")
+        public Boolean isClosed;
+
+        @Property(name = "url")
+        public String url;
+
+        @Property(name = "review_count")
+        public Integer reviewCount;
+
+        @Property(name = "categories")
+        public List<Category> categories;
 
         @Property(name = "rating")
         public Double rating;
 
+        @Property(name = "coordinates")
+        public Coordinates coordinates;
+
+        @Property(name = "transactions")
+        public List<String> transactions;
+
+        @Property(name = "price")
+        public String price;
+
         @Property(name = "location")
         public Location location;
+
+        @Property(name = "phone")
+        public String phone;
+
+        @Property(name = "display_phone")
+        public String displayPhone;
+
+        @Property(name = "distance")
+        public Double distance;
     }
 
     public static class Location {
@@ -55,5 +85,24 @@ public class SearchBusinessResponse {
 
         @Property(name = "state")
         public String state;
+
+        @Property(name = "display_address")
+        public List<String> displayAddress;
+    }
+
+    public static class Category {
+        @Property(name = "alias")
+        public String alias;
+
+        @Property(name = "title")
+        public String title;
+    }
+
+    public static class Coordinates {
+        @Property(name = "latitude")
+        public String latitude;
+
+        @Property(name = "longitude")
+        public String longitude;
     }
 }

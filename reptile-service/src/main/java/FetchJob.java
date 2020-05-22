@@ -12,7 +12,7 @@ public class FetchJob implements Job {
 
     @Override
     public void execute(JobContext context) throws Exception {
-//        reptileService.fetchRestaurant();
-        reptileService.fetchMenu();
+        reptileService.fetchRestaurant();
+//        reptileService.fetchMenu();
     }
 }
