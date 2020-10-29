@@ -1,7 +1,5 @@
 import core.framework.module.App;
 import core.framework.module.SystemModule;
-import core.framework.mongo.module.MongoConfig;
-import domain.Restaurant;
 
 /**
  * @author Neal
@@ -10,11 +8,9 @@ public class ReptileApp extends App {
     @Override
     protected void initialize() {
         load(new SystemModule("sys.properties"));
+        executor().add();
+//        http().errorHandler(bind(CustomErrorHandler.class));
 
-        MongoConfig config = config(MongoConfig.class);
-        config.uri(requiredProperty("sys.mongo.uri"));
-        config.collection(Restaurant.class);
-
-        load(new ReptileModule());
+        load(new LogModule());
     }
 }
