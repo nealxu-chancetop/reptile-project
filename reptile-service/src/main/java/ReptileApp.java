@@ -1,3 +1,4 @@
+import app.reptile.web.handler.CustomErrorHandler;
 import core.framework.module.App;
 import core.framework.module.SystemModule;
 
@@ -9,7 +10,7 @@ public class ReptileApp extends App {
     protected void initialize() {
         load(new SystemModule("sys.properties"));
         executor().add();
-//        http().errorHandler(bind(CustomErrorHandler.class));
+        http().errorHandler(bind(CustomErrorHandler.class));
 
         load(new LogModule());
     }

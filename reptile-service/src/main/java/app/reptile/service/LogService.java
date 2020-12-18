@@ -27,9 +27,11 @@ public class LogService {
         logger.info("this is a action message");
         ActionLogContext.put("log_key_1", "key1");
         ActionLogContext.put("log_key_2", "key2");
-        ActionLogContext.track("query_use_time", 100L);
+        //start
+        //call service1
+        ActionLogContext.track("response_data_size", 100L);
         //doing something
-        ActionLogContext.track("query_use_time", 50L);
+        ActionLogContext.track("response_data_size", 50L);
     }
 
     public void warning() {
@@ -45,6 +47,7 @@ public class LogService {
     }
 
     public void executorError() {
+        logger.info("this is a execute message");
         executor.submit("execute-log-job", () -> {
             logger.info("hello chancetop");
             Threads.sleepRoughly(Duration.ofSeconds(2));
