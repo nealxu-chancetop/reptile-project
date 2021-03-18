@@ -20,6 +20,7 @@ public class LogService {
     Executor executor;
 
     public void info() {
+        logger.trace("this is a trace message -- Don't output");
         logger.info("this is a info message");
     }
 
@@ -35,23 +36,20 @@ public class LogService {
     }
 
     public void warning() {
-        logger.warn("this is a warning message");
+        logger.warn("this is a warning message1");
+        logger.warn(Markers.errorCode("WARN_ERROR_CODE"), "this is a warning message2");
     }
 
     public void error() {
         logger.error(Markers.errorCode("LOG_SERVICE_ERROR"), "this is a error message");
     }
 
-    public void jobException() {
-//        throw new MethodNotAllowedException("Can't use this method");
-    }
-
     public void executorError() {
         logger.info("this is a execute message");
         executor.submit("execute-log-job", () -> {
-            logger.info("hello chancetop");
-            Threads.sleepRoughly(Duration.ofSeconds(2));
-            logger.error(Markers.errorCode("LOG_INNER_JOB_ERROR"), "log inner job error");
+            logger.info("inner job execute-log-job run");
+            Threads.sleepRoughly(Duration.ofSeconds(2)); //mock method invoke
+            executor.submit("execute-inner-log-job", () -> logger.error(Markers.errorCode("LOG_INNER_JOB_ERROR"), "log inner job error"));
         });
     }
 
